@@ -1,8 +1,8 @@
 -- LiveReview Initial Schema
 -- Migration: 001_initial_schema.sql
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension required by gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================
 -- PROFILES (extends Supabase auth.users)
