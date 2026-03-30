@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   MessageSquare,
@@ -10,6 +10,8 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Projects', icon: LayoutDashboard },
@@ -17,8 +19,25 @@ const NAV_ITEMS = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  user: User | null
+}
+
+export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
+  const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User'
+  const email = user?.email ?? ''
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined
+  const initials = displayName.slice(0, 1).toUpperCase()
 
   return (
     <aside className="w-60 flex-shrink-0 bg-zinc-900 border-r border-zinc-800 flex flex-col">
@@ -67,16 +86,24 @@ export function DashboardSidebar() {
 
       {/* User section */}
       <div className="px-3 py-3 border-t border-zinc-800">
-        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer group">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-white">U</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">User</p>
-            <p className="text-xs text-zinc-500 truncate">user@example.com</p>
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-zinc-800 transition-colors group"
+        >
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-semibold text-white">{initials}</span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-medium text-zinc-200 truncate">{displayName}</p>
+            <p className="text-xs text-zinc-500 truncate">{email}</p>
           </div>
           <LogOut className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors flex-shrink-0" />
-        </div>
+        </button>
       </div>
     </aside>
   )

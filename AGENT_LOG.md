@@ -118,3 +118,87 @@
 **No integration conflicts detected between agents.**
 
 **Ready for Phase 2:** Reverse proxy + pin comment system + realtime foundation
+
+---
+
+## Phase 2: Auth + Real Data + Reverse Proxy + Overlay + Realtime
+
+**Started:** 2026-03-30
+**Coordinator:** Agent 1 — Product Lead
+
+---
+
+### [2026-03-30] [AGENT 3 - BACKEND] COMPLETE: Auth routes + API layer done
+
+**Completed:**
+- src/app/auth/callback/route.ts — Supabase OAuth code exchange (PKCE flow)
+- src/app/auth/confirm/route.ts — magic link token_hash confirmation
+- src/app/api/projects/route.ts — GET (list with stats via join), POST (create + auto-add owner as admin)
+- src/app/api/projects/[id]/route.ts — GET (project detail), PATCH (name/url/status), DELETE
+- src/app/api/projects/[id]/feedback/route.ts — GET (list with category/status/page_url filters), POST (create with context_metadata)
+- src/app/api/feedback/[feedbackId]/route.ts — PATCH (status toggle open/resolved)
+- src/app/api/feedback/[feedbackId]/comments/route.ts — POST (add reply)
+- src/app/review/[projectId]/[...path]/route.ts — full reverse proxy (HTML rewrite + CSS rewrite + overlay inject + redirect handling)
+- SETUP.md — step-by-step Supabase setup guide for the user
+
+**Reverse proxy details:**
+- Strips X-Frame-Options, CSP, COOP, COEP, CORP response headers
+- Rewrites href/src/action/srcset/url() in HTML and CSS to route through /review/[projectId]/
+- Injects window.__livereview config + /overlay/livereview.js before </body>
+- Handles 301/302 redirects by rewriting Location header through proxy
+
+**Blockers resolved:**
+- postgrest-js v2.100 requires `Relationships: []` on each table in database.types.ts — added + `CompositeTypes` key
+- Join queries (projects→feedback_items) inferred as SelectQueryError without FK relationships in types — resolved with `as unknown as` cast pattern
+- Enum filter params (category, status from URL) need explicit cast to literal union types
+
+**Notes for Agent 2 (Frontend):**
+- window.__livereview = { projectId, supabaseUrl, supabaseAnonKey, apiBase } injected on every proxied HTML page
+- POST /api/projects/[id]/feedback accepts: type, category, content, page_url, pin_position, context_metadata
+- PATCH /api/feedback/[feedbackId] accepts: { status: 'open' | 'resolved' }
+
+---
+
+### [2026-03-30] [AGENT 2 - FRONTEND] COMPLETE: Auth wiring + dashboard + overlay script done
+
+**Completed:**
+- src/app/login/page.tsx — wired Google OAuth (signInWithOAuth) + magic link (signInWithOtp)
+- src/components/dashboard/Sidebar.tsx — real user session from getUser(), signOut() on logout
+- src/app/dashboard/page.tsx — replaced mock data with real Supabase query (feedback_items + project_members join)
+- src/components/dashboard/NewProjectButton.tsx — client component triggering NewProjectDialog
+- src/app/dashboard/projects/[projectId]/page.tsx — project detail page with feedback list, open count, review link
+- src/app/dashboard/feedback/page.tsx — placeholder (Phase 3)
+- src/app/dashboard/settings/page.tsx — placeholder (Phase 3)
+- src/app/review/[projectId]/page.tsx — redirects to catch-all proxy route
+- public/overlay/livereview.js — full overlay script (Shadow DOM, toolbar, pin system, realtime)
+
+**Overlay script details:**
+- Shadow DOM isolation (host div, attachShadow) — no CSS/JS conflicts with target page
+- Navigate/Comment/Annotate mode switching with crosshair cursor in comment mode
+- Click handler captures clientX/Y, builds CSS selector (walks DOM up to nearest #id or nth-of-type)
+- Comment form positioned near click, stays in viewport, supports Cmd+Enter submit
+- POST to /api/projects/{projectId}/feedback with pin_position + context_metadata (browser, os, viewport, deviceType, consoleErrors)
+- Numbered color-coded pins rendered at click position (bug=red, ux=orange, feature=purple, general=blue, question=green)
+- Loads existing pins on page load (GET /api/projects/{projectId}/feedback?page_url=...)
+- Supabase Realtime: postgres_changes INSERT on feedback_items → renders new pins from other reviewers
+- Presence channel tracking: updates reviewer count in toolbar dot indicator
+
+---
+
+### [2026-03-31] [PRODUCT LEAD] COMPLETE: Phase 2 coordination check passed
+
+**All Phase 2 success criteria met:**
+- [x] Auth: Google OAuth + magic link wired end-to-end (callback, confirm, login page, sidebar sign out)
+- [x] Dashboard: real Supabase data, project cards with live feedback counts
+- [x] Create project: NewProjectButton → dialog → POST /api/projects → card appears
+- [x] Project detail: feedback list, open count, link to review session
+- [x] Reverse proxy: /review/[projectId]/[...path] fetches + rewrites + injects overlay
+- [x] Overlay: Shadow DOM toolbar, comment mode, pin placement, form submission
+- [x] Realtime: Supabase channel subscription — new pins appear across reviewer sessions
+- [x] `npm run build` passes — 0 TypeScript errors, all 16 routes compiled
+
+**Integration notes:**
+- database.types.ts updated: added Relationships: [] to all tables, CompositeTypes key — required for postgrest-js v2.100
+- Build fix pattern: joined queries use `as unknown as TargetType` to work around missing FK inference
+
+**Ready for Phase 3:** Annotation canvas (Fabric.js), feedback filters + export, email notifications, live cursors

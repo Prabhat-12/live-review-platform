@@ -31,6 +31,7 @@ export type Database = {
           email?: string
           created_at?: string
         }
+        Relationships: []
       }
       projects: {
         Row: {
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       project_members: {
         Row: {
@@ -92,6 +94,7 @@ export type Database = {
           role?: 'admin' | 'reviewer' | 'viewer'
           invited_at?: string
         }
+        Relationships: []
       }
       feedback_items: {
         Row: {
@@ -102,23 +105,10 @@ export type Database = {
           category: 'bug' | 'ux' | 'feature_request' | 'general' | 'question'
           content: string
           page_url: string
-          pin_position: {
-            x: number
-            y: number
-            selector: string
-            viewportW: number
-            viewportH: number
-          } | null
+          pin_position: Json | null
           annotation_data: Json | null
           screenshot_url: string | null
-          context_metadata: {
-            browser: string
-            os: string
-            viewport: { width: number; height: number }
-            deviceType: 'desktop' | 'tablet' | 'mobile'
-            consoleErrors: string[]
-            timestamp: string
-          }
+          context_metadata: Json | null
           status: 'open' | 'resolved'
           created_at: string
         }
@@ -133,7 +123,7 @@ export type Database = {
           pin_position?: Json | null
           annotation_data?: Json | null
           screenshot_url?: string | null
-          context_metadata?: Json
+          context_metadata?: Json | null
           status?: 'open' | 'resolved'
           created_at?: string
         }
@@ -148,10 +138,11 @@ export type Database = {
           pin_position?: Json | null
           annotation_data?: Json | null
           screenshot_url?: string | null
-          context_metadata?: Json
+          context_metadata?: Json | null
           status?: 'open' | 'resolved'
           created_at?: string
         }
+        Relationships: []
       }
       comments: {
         Row: {
@@ -175,6 +166,7 @@ export type Database = {
           content?: string
           created_at?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -184,6 +176,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
